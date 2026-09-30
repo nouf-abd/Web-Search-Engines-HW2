@@ -5,7 +5,7 @@ from snowballstemmer import EnglishStemmer as es
 Open .tsv 
 #Function for tokenization + text cleaning 
 def tokenizer(text): 
-    stopwords_list = requests.get("https://gist.githubusercontent.com/rg089/35e00abf8941d72d419224cfd5b5925d/raw/12d899b70156fd0041fa9778d657330b024b959c/stopwords.txt").content
+    stopwords_list = requests.get("https://github.com/stopwords-iso/stopwords-en/blob/master/stopwords-en.txt").content
     stopwords = set(stopwords_list.decode().splitlines()) 
     text=text.lower()
     text=[es().stemWord(text) for t in text] #Stemming for compression
