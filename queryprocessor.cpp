@@ -11,7 +11,7 @@ using namespace std;
 string clean_query() {
     string user_input="";
     cout<<("What are you searching for?");
-    cin>>user_input;
+    getline(cin,user_input);
     user_input.erase(remove_if(user_input.begin(),user_input.end(),[](unsigned char c){
         return ispunct(c);
     }),user_input.end()); // Remove punctuation
