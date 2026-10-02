@@ -2,6 +2,7 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <vector> 
 using namespace std;
 
 // function to clean query - keep stopwords or no 
@@ -13,10 +14,12 @@ string clean_query() {
     cout<<("What are you searching for?");
     getline(cin,user_input);
     user_input.erase(remove_if(user_input.begin(),user_input.end(),[](unsigned char c){
-        return ispunct(c);
-    }),user_input.end()); // Remove punctuation
+        return ispunct(c) && != '\'';
+    }),user_input.end()); // Remove punctuation except ' 
 
     for(char &c:user_input){
         c=tolower(c); // To lowercase
     }
+
+
 }
