@@ -27,5 +27,3 @@ int main(int argc, char** argv) {
    }
    return 0;
 }
-
-// Refs:  https://techoverflow.net/2020/01/30/how-to-read-tsv-tab-separated-values-in-c/
