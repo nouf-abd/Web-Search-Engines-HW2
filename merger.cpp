@@ -18,9 +18,8 @@ struct runRead
 };
 
 struct compareRunRead
-{
-    bool operator()(const runRead &a, const runRead &b)
-    { // custom comparator
+{   bool operator()(const runRead &a, const runRead &b)
+    { // custom comparator for minHeap 
         return a.identTerm > b.identTerm;
     }
 };
@@ -46,7 +45,7 @@ pair<string, vector<pair<int, int>>> parseRunLine(const string &line)
     {
         res.push_back({docId, freq}); // push pair into result vector
     }
-    return {identTerm, res}; // res will be eg. {"magic", [(3,2]}
+    return {identTerm, res}; // res will be eg. {"magic", [(3,2)]}
 }
 vector<ifstream> opensRuns(int runCount)
 {
