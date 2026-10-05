@@ -9,8 +9,10 @@
 #include <algorithm>
 using namespace std;
 
-const size_t memmory_limit = 5000000; // limit for main memoru
-
+const size_t memory_limit = 5000000; // limit for main memory
+void merger(int runCount){
+    initializeHeap(runCount);
+}
 // tokenizer (from the parser)
 vector<string> tokens(string text){
    vector<string> token_list;
@@ -79,7 +81,7 @@ int main(int argc, char** argv) {
       int docID = nextDocID++; // counter to assign a unique docIDs
       string text = (parts.size() > 1) ? parts[1] : "";
 
-      uint64_t originID = stoull(parts[0]);
+      uint64_t originID = stoull(parts[0]); // should we add try catch to this ? 
       mappingFile.write(reinterpret_cast<const char*>(&originID), sizeof(originID)); // mapping msMARCOID to docID
       
       map<string, int> termFreq;
@@ -90,7 +92,7 @@ int main(int argc, char** argv) {
          postings[term].push_back({docID, freq});
          postingCount++;
       }
-      if (postingCount >= memmory_limit) {
+      if (postingCount >= memory_limit) {
          flushRun(postings, runCount);
          postingCount = 0;
       }
@@ -100,6 +102,9 @@ int main(int argc, char** argv) {
    }
    mappingFile.close();
    cout << "Parsed " << nextDocID << " documents" << endl;
+   ofstream count_file("run_count.txt");
+   count_file << runCount; 
+   count_file.close();
    return 0;
    }
    
