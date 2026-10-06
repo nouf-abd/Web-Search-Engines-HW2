@@ -10,7 +10,6 @@
 #include <optional>
 #include <queue>
 using namespace std;
-using MinHeap = priority_queue<runRead, vector<runRead>, compareRunRead>; // minHeap for runRead, including the comparator so we can use priority queue as a minheap
 
 const int BLOCK_SIZE = 128;
 struct runRead
@@ -27,6 +26,7 @@ struct compareRunRead
         return a.identTerm > b.identTerm;
     }
 };
+using MinHeap = priority_queue<runRead, vector<runRead>, compareRunRead>; // minHeap for runRead, including the comparator so we can use priority queue as a minheap
 
 int getRunCount()
 { // need to pass runCount from indexer.cpp for the for-loop later on
@@ -62,7 +62,7 @@ vector<ifstream> opensRuns(int runCount)
             cerr << "Error opening file: run_" << to_string(i) << ".bin" << endl;
             exit(1);
         }
-        runFiles.push_back(move(runFile)); // no heavy dupes with move
+        runFiles.push_back(std::move(runFile)); // no heavy dupes with move
     }
     return runFiles;
 }
@@ -116,12 +116,111 @@ vector<runRead> matchingTerms(MinHeap &minHeap)
 
     return matched;
 }
-writeOutput()
-{
 
-} // writes the merged postings to the output file
+void varbyteEncode(uint32_t n, vector<uint8_t> &encoded)
+{
+    while (n >= 128)
+    { // defined max varbyte size at 128
+        encoded.push_back(static_cast<uint8_t>((n & 127) | 128));
+        n >>= 7; // keeps one byte in for continuation flag, shift to the right for next 7
+    }
+    encoded.push_back(static_cast<uint8_t>(n));
+}
+
+uint32_t decodevar(const vector<uint8_t> &encoded, size_t &pos)
+{
+    uint32_t n = 0; // holding decoded val
+    int shift = 0;
+    while (true)
+    {
+        uint8_t curr = encoded[pos++];
+        n |= static_cast<uint32_t>(curr & 127) << shift; //
+        if (!(curr & 128))
+        {
+            break;
+        } // zero flag
+        shift += 7;
+    }
+    return n;
+}
+void writeu32(ofstream &encoded, uint32_t b)
+{ // 32 bits = 4 bytes
+    encoded.write(reinterpret_cast<const char *>(&b), sizeof(b));
+}
+void writeTermEntry(ofstream &indexFile, ofstream &lexFile, const string &term, const vector<pair<int, int>> &postings)
+{
+    uint64_t offset = indexFile.tellp();
+    size_t df = postings.size();
+    size_t numBlocks = (df + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
+    vector<uint32_t> lastDocIDs, docSizes, freqSizes;
+    vector<uint8_t> payload;
+    uint32_t prev = 0; // carries across blocks
+
+    for (size_t b = 0; b < numBlocks; b++)
+    {
+        size_t start = b * BLOCK_SIZE;
+        size_t end = min(start + BLOCK_SIZE, df);
+        vector<uint8_t> docBytes, freqBytes;
+        for (size_t i = start; i < end; i++)
+        {
+            uint32_t docID = static_cast<uint32_t>(postings[i].first);
+            varbyteEncode(docID - prev, docBytes);
+            varbyteEncode(static_cast<uint32_t>(postings[i].second), freqBytes);
+            prev = docID;
+        }
+        lastDocIDs.push_back(prev);
+        docSizes.push_back(docBytes.size());
+        freqSizes.push_back(freqBytes.size());
+        payload.insert(payload.end(), docBytes.begin(), docBytes.end());
+        payload.insert(payload.end(), freqBytes.begin(), freqBytes.end());
+    }
+
+    writeu32(indexFile, numBlocks);
+    for (size_t b = 0; b < numBlocks; b++)
+    {
+        writeu32(indexFile, lastDocIDs[b]);
+        writeu32(indexFile, docSizes[b]);
+        writeu32(indexFile, freqSizes[b]);
+    }
+    indexFile.write(reinterpret_cast<const char *>(payload.data()), payload.size());
+
+    uint64_t length = static_cast<uint64_t>(indexFile.tellp()) - offset;
+    lexFile << term << ' ' << offset << ' ' << length << ' ' << df << '\n';
+}
+void runMerge(MinHeap &minHeap, vector<ifstream> &runFiles, ofstream &indexFile, ofstream &lexFile)
+{
+    while (!minHeap.empty())
+    {
+        vector<runRead> matched = matchingTerms(minHeap);
+        string term = matched[0].identTerm;
+        vector<pair<int, int>> merged = mergePostingsForTerm(matched);
+        writeTermEntry(indexFile, lexFile, term, merged);
+
+        for (auto &entry : matched)
+        {
+            auto next = readNextLine(runFiles[entry.runIndex], entry.runIndex);
+            if (next.has_value())
+                minHeap.push(next.value());
+        }
+    }
+}
 int main()
 {
+    int runCount = getRunCount();
+    vector<ifstream> runFiles = opensRuns(runCount);
+    MinHeap minheap = initializeHeap(runCount, runFiles);
+
+    ofstream indexFile("index.bin", ios::binary);
+    ofstream lexFile("lexicon.txt");
+    if (!lexFile || !indexFile)
+    {
+        cerr << "Failed to open output files." << endl;
+        return 1;
+    }
+
+    runMerge(minheap, runFiles, indexFile, lexFile);
+    cout << "Merge complete" << endl;
 
     return 0;
 }
