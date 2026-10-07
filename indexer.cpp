@@ -77,7 +77,8 @@ int main(int argc, char **argv)
       cerr << "Could not open docid_map.bin for writing" << endl;
       return 1;
    }
-   map<string, vector<pair<int, int>>> postings; // map of terms to a vector of pairs (docID, frequency)
+   ofstream docLengths("doc_length.bin)", ios::binary); // binary file letting us know document length (uint32)
+   map<string, vector<pair<int, int>>> postings;        // map of terms to a vector of pairs (docID, frequency)
    size_t postingCount = 0;
    int runCount = 0;
    int nextDocID = 0;
@@ -99,9 +100,12 @@ int main(int argc, char **argv)
 
       uint64_t originID = stoull(parts[0]);                                           // should we add try catch to this ?
       mappingFile.write(reinterpret_cast<const char *>(&originID), sizeof(originID)); // mapping msMARCOID to docID
-
+      vector<string> tokies = tokens(line);                                           // call token function to get the length and frequency
+      uint32_t docLength = static_cast<uint32_t>(tokies.size());
+      docLengths.write(reinterpret_cast<const char *>(&docLength), sizeof(docLength));
+      cout << "Parsed " << nextDocID << " documents" << endl;
       map<string, int> termFreq;
-      for (const auto &token : tokens(text))
+      for (const auto &token : tokies)
       {
          termFreq[token]++;
       }
@@ -121,7 +125,7 @@ int main(int argc, char **argv)
       flushRun(postings, runCount);
    }
    mappingFile.close();
-   cout << "Parsed " << nextDocID << " documents" << endl;
+   docLengths.close();
    ofstream count_file("run_count.txt");
    count_file << runCount;
    count_file.close();
