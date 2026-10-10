@@ -7,10 +7,11 @@
 #include <map>
 #include <cctype>
 #include <algorithm>
+#include <filesystem>
 using namespace std;
 
 const size_t memory_limit = 5000000; // limit for main memory
-
+const int MAX_DOCS = 200000;         // stop after this many docs (raise for the full collection)
 // tokenizer (from the parser)
 vector<string> tokens(string text)
 {
@@ -46,10 +47,10 @@ vector<string> tokens(string text)
 
 void flushRun(map<string, vector<pair<int, int>>> &postings, int &runCount)
 {
-   ofstream runFile("run_" + to_string(runCount) + ".bin", ios::binary); // opens file
+   ofstream runFile("runs/run_" + to_string(runCount) + ".bin", ios::binary); // opens file
    if (!runFile)
    {
-      cerr << "Could not open run_" << runCount << ".bin for writing" << endl;
+      cerr << "Could not open runs/run_" << runCount << ".bin for writing" << endl;
       exit(1);
    }
    for (const auto &[term, docList] : postings)
@@ -65,6 +66,8 @@ void flushRun(map<string, vector<pair<int, int>>> &postings, int &runCount)
 
 int main(int argc, char **argv)
 {
+   filesystem::remove_all("runs");
+   filesystem::create_directory("runs");
    ifstream file("collection.tsv"); // Opens the collection.tsv file for reading
    if (!file)
    {
@@ -77,7 +80,7 @@ int main(int argc, char **argv)
       cerr << "Could not open docid_map.bin for writing" << endl;
       return 1;
    }
-   ofstream docLengths("doc_length.bin)", ios::binary); // binary file letting us know document length (uint32)
+   ofstream docLengths("doc_length.bin", ios::binary); // binary file letting us know document length (uint32)
    map<string, vector<pair<int, int>>> postings;        // map of terms to a vector of pairs (docID, frequency)
    size_t postingCount = 0;
    int runCount = 0;
@@ -85,6 +88,8 @@ int main(int argc, char **argv)
    string line;
    while (getline(file, line))
    {
+      if (nextDocID >= MAX_DOCS)
+         break;
       vector<string> parts;
       string field;
       istringstream ss(line);
@@ -100,10 +105,11 @@ int main(int argc, char **argv)
 
       uint64_t originID = stoull(parts[0]);                                           // should we add try catch to this ?
       mappingFile.write(reinterpret_cast<const char *>(&originID), sizeof(originID)); // mapping msMARCOID to docID
-      vector<string> tokies = tokens(line);                                           // call token function to get the length and frequency
+      vector<string> tokies = tokens(text);                                           // call token function to get the length and frequency
       uint32_t docLength = static_cast<uint32_t>(tokies.size());
       docLengths.write(reinterpret_cast<const char *>(&docLength), sizeof(docLength));
-      cout << "Parsed " << nextDocID << " documents" << endl;
+      if (nextDocID % 100000 == 0)
+         cout << "Parsed " << nextDocID << " documents" << endl;
       map<string, int> termFreq;
       for (const auto &token : tokies)
       {
@@ -126,8 +132,9 @@ int main(int argc, char **argv)
    }
    mappingFile.close();
    docLengths.close();
-   ofstream count_file("run_count.txt");
+   ofstream count_file("runs/run_count.txt");
    count_file << runCount;
    count_file.close();
+   cout << "Done, parsed " << nextDocID << " documents, " << runCount << " runs" << endl;
    return 0;
 }

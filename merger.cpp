@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <optional>
 #include <queue>
+#include <filesystem>
+#include <cstring>
+#include <cerrno>
 using namespace std;
 
 const int BLOCK_SIZE = 128;
@@ -30,7 +33,7 @@ using MinHeap = priority_queue<runRead, vector<runRead>, compareRunRead>; // min
 
 int getRunCount()
 { // need to pass runCount from indexer.cpp for the for-loop later on
-    ifstream count_file("run_count.txt");
+    ifstream count_file("runs/run_count.txt");
     int runCount;
     count_file >> runCount;
     count_file.close();
@@ -56,10 +59,13 @@ vector<ifstream> opensRuns(int runCount)
     vector<ifstream> runFiles;
     for (int i = 0; i < runCount; i++)
     {                                                                  // open every run file in binary mode
-        ifstream runFile("run_" + to_string(i) + ".bin", ios::binary); // opnes runfile with same logic from parser
+        ifstream runFile("runs/run_" + to_string(i) + ".bin", ios::binary); // opnes runfile with same logic from parser
         if (!runFile.is_open())
         {
-            cerr << "Error opening file: run_" << to_string(i) << ".bin" << endl;
+            cerr << "Error opening file: runs/run_" << i << ".bin" << endl;
+            cerr << "Merger is running in: " << filesystem::current_path() << endl;
+            cerr << "File exists from here? " << filesystem::exists("runs/run_" + to_string(i) + ".bin") << endl;
+            cerr << "Reason: " << strerror(errno) << endl;
             exit(1);
         }
         runFiles.push_back(std::move(runFile)); // no heavy dupes with move

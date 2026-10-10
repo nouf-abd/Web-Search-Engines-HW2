@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <cctype>
 #include <vector> 
+#include "inverlist.h"
 using namespace std;
+
 
 // function to clean query - keep stopwords or no 
 // remember to clean the query the same way you did it in parser
