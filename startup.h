@@ -80,7 +80,7 @@ string getPassage(IndexData &data, uint32_t docId)
     }
     if (!text.empty() && text.back() == '\r')
     {
-        text.back();
+        text.pop_back();
     }
 
     return text;

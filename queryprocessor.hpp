@@ -254,8 +254,9 @@ string snippetfairy(const vector<string> &terms, const string &document)
 {
     string lower = document; // we are looking for terms, so we have to make everything lowercase or it won't match
 
-    transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c)
-              { return tolower(c) }); // 4 args
+    transform(lower.begin(), lower.end(), lower.begin(), // start, end, where do you start writing
+              [](unsigned char c)
+              { return tolower(c); }); // 4 args
 
     vector<size_t> positions;
 
@@ -263,7 +264,7 @@ string snippetfairy(const vector<string> &terms, const string &document)
     {
         size_t position = lower.find(t); // mapping where these terms are - string acts like array...
 
-        if (position != lower.end())
+        if (position != string::npos)
         { // found
             positions.push_back(position);
         }
@@ -282,7 +283,7 @@ string snippetfairy(const vector<string> &terms, const string &document)
     size_t sniplim = min(end - start, size_t(200));
 
     string snip = document.substr(start, sniplim);
-    replace(snip.begin(), snip.end(), '/n', ' ');
+    replace(snip.begin(), snip.end(), '\n', ' ');
 
     return snip;
 }
