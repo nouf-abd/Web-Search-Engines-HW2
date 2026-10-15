@@ -34,3 +34,5 @@ caffeinate -i ./indexer
 caffeinate -i ./merger
 
 Use query processor: 
+Type in "./query" to start the program. The program will then prompt the user: "What are you searching for?" The user will then type in their query. After retrieving the results and printing out the ranked results and their snippets, the program will prompt the user again to type in their query. If they wish to quit, type in "/q". 
+
