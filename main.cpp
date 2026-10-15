@@ -2,7 +2,7 @@
 #include <iostream>
 #include "queryprocessor.hpp"
 using namespace std;
-void printfinish(const vector<ranked> &res, const string &query, IndexData &data)
+void printFinish(const vector<ranked> &res, const string &query, IndexData &data)
 {
     if (res.empty())
     {
