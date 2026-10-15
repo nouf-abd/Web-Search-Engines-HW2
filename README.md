@@ -6,12 +6,12 @@ Raemae Kok & Nouf Aljomiha
 
 Files: 
 
-indexer.cpp 
-inverlist.hpp 
-main.cpp 
-merger.cpp 
-queryprocessor.hpp 
-startup.h 
+1. indexer.cpp 
+2. inverlist.hpp 
+3. main.cpp 
+4. merger.cpp 
+5. queryprocessor.hpp 
+6. startup.h 
 
 
 Requirements:
