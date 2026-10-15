@@ -250,9 +250,39 @@ vector<ranked> search(const string &query, bool conjunctive, IndexData &data, si
         return disjunctiveDAAT(data.averageDocLength, data.documentLengths, terms, data.lexicon, limit, data.numDocs, indexFile);
     }
 }
-
-int main()
+string snippetfairy(const vector<string> &terms, const string &document)
 {
+    string lower = document; // we are looking for terms, so we have to make everything lowercase or it won't match
 
-    return 0;
+    transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c)
+              { return tolower(c) }); // 4 args
+
+    vector<size_t> positions;
+
+    for (auto &t : terms)
+    {
+        size_t position = lower.find(t); // mapping where these terms are - string acts like array...
+
+        if (position != lower.end())
+        { // found
+            positions.push_back(position);
+        }
+    }
+
+    if (positions.empty())
+    { // just show beginning
+        return document.substr(0, 200);
+    }
+
+    size_t first = *min_element(positions.begin(), positions.end()); // first position in document
+    size_t last = *max_element(positions.begin(), positions.end());  // last position
+
+    size_t start = (first < 100) ? 0 : first - 100;
+    size_t end = min(last + 100, document.size());
+    size_t sniplim = min(end - start, size_t(200));
+
+    string snip = document.substr(start, sniplim);
+    replace(snip.begin(), snip.end(), '/n', ' ');
+
+    return snip;
 }

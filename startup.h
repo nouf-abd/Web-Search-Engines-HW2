@@ -1,4 +1,6 @@
-#include "startup.h"
+#include "inverlist.h"
+#ifndef STARTUP_H
+#define STARTUP_H
 
 struct IndexData
 {
@@ -13,22 +15,19 @@ struct IndexData
 void docTable(const string &filename, IndexData &data)
 {
 
-    uint32_t docId, length;
-    ifstream f(filename); // read doctable
+    ifstream f(filename, ios::binary); // read doctable
     if (!f)
     {
-        cerr << "Could not open" << endl;
+        cerr << "Could not open" << filename << endl;
         exit(1);
     }
 
     uint64_t totalLength = 0;
-    while (f >> docId >> length)
+    uint32_t length;
+    while (f.read(reinterpret_cast<char *>(&length), sizeof(length))) // 4 byte chunks
     {
-        if (docId >= data.documentLengths.size())
-        {
-            data.documentLengths.resize(docId + 1); // are we still big enough
-        }
-        data.documentLengths[docId] = length; // how long is each doc
+
+        data.documentLengths.push_back(length); // what is the position in the file for this doc
         totalLength += length;
         data.numDocs++;
     }
@@ -36,18 +35,55 @@ void docTable(const string &filename, IndexData &data)
     data.averageDocLength = double(totalLength) / data.numDocs;
 }
 
-void passaget(const string &filename, IndexData data)
+void passaget(const string &filename, IndexData &data) // where does each line start - to help snippet
 {
     uint64_t bytecounter = 0;
-    ifstream f(filename, ::iosbinary) // don't change file endings in binary mode, don't wanna throw off byte count
-        if (!f)
+    ifstream f(filename, ios::binary); // don't change file endings in binary mode, don't wanna throw off byte count
+    if (!f)
     {
         cerr << "Could not open " << filename << endl;
+        exit(1);
+    }
+    string line;
+
+    while (data.passageOffset.size() < data.numDocs && getline(f, line))
+    {
+        data.passageOffset.push_back(bytecounter);
+        bytecounter += line.size() + 1;
+    }
+    data.collect.open(filename, ios::binary);
+}
+void loadIndexData(IndexData &data, const string &lexFile, const string &lenFile, const string &collFile)
+{
+    data.lexicon = loadLexicon(lexFile);
+    docTable(lenFile, data);
+    passaget(collFile, data);
+}
+
+string getPassage(IndexData &data, uint32_t docId)
+{
+    if (docId >= data.passageOffset.size())
+        return "";
+    data.collect.clear();
+    data.collect.seekg(data.passageOffset[docId]);
+    string line;
+    getline(data.collect, line);
+    size_t tab = line.find('\t'); // where does the line start
+    string text;
+    if (tab == string::npos)
+    { // fouund tab
+        text = line;
+    }
+    else
+    {
+        text = line.substr(tab + 1);
+    }
+    if (!text.empty() && text.back() == '\r')
+    {
+        text.back();
     }
 
-    while (getline(f, line))
-    {
-        size_t tab = line.find("/t")
-    }
+    return text;
 }
+
 #endif
