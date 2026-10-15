@@ -15,9 +15,9 @@ Files:
 
 
 Requirements:
-C++17 compiler
-collection.tsv (Ms Marco)
-Disk space needed: approx. 12 GB
+1. C++17 compiler
+2. collection.tsv (Ms Marco)
+3. Disk space needed: approx. 12 GB
 
 How to build and run: 
 
