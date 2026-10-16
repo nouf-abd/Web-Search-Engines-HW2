@@ -37,7 +37,7 @@ int main()
         {
             conjunctive = false;
         }
-        printfinish(search(query, conjunctive, data), query, data);
+        printFinish(search(query, conjunctive, data), query, data);
     }
 
     return 0;
